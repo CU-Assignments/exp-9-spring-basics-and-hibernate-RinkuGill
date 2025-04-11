@@ -1,0 +1,120 @@
+MEDIUM :
+
+import jakarta.persistence.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class MainApp {
+
+    // Student Entity
+    @Entity
+    @Table(name = "students")
+    public static class Student {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private int id;
+
+        private String name;
+        private int age;
+
+        public Student() {}
+
+        public Student(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        // Getters & Setters
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public int getAge() { return age; }
+        public void setAge(int age) { this.age = age; }
+
+        @Override
+        public String toString() {
+            return "Student{id=" + id + ", name='" + name + "', age=" + age + "}";
+        }
+    }
+
+    // Hibernate Utility for SessionFactory
+    public static class HibernateUtil {
+        private static final SessionFactory sessionFactory;
+
+        static {
+            try {
+                sessionFactory = new Configuration()
+                        .configure() // Loads hibernate.cfg.xml
+                        .addAnnotatedClass(Student.class)
+                        .buildSessionFactory();
+            } catch (Throwable ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
+        }
+
+        public static SessionFactory getSessionFactory() {
+            return sessionFactory;
+        }
+    }
+
+    // Main method to test CRUD operations
+    public static void main(String[] args) {
+        // CREATE
+        Student student1 = new Student("Alex", 22);
+        Student student2 = new Student("Maya", 24);
+        saveStudent(student1);
+        saveStudent(student2);
+
+        // READ
+        Student fetched = getStudentById(1);
+        System.out.println("Fetched: " + fetched);
+
+        // UPDATE
+        fetched.setAge(25);
+        updateStudent(fetched);
+
+        // DELETE
+        deleteStudent(2);
+    }
+
+    public static void saveStudent(Student student) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        session.save(student);
+        tx.commit();
+        session.close();
+        System.out.println("Saved: " + student);
+    }
+
+    public static Student getStudentById(int id) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Student student = session.get(Student.class, id);
+        session.close();
+        return student;
+    }
+
+    public static void updateStudent(Student student) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        session.update(student);
+        tx.commit();
+        session.close();
+        System.out.println("Updated: " + student);
+    }
+
+    public static void deleteStudent(int id) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        Student student = session.get(Student.class, id);
+        if (student != null) {
+            session.delete(student);
+            System.out.println("Deleted: " + student);
+        } else {
+            System.out.println("No student found with ID: " + id);
+        }
+        tx.commit();
+        session.close();
+    }
+}
